@@ -8,9 +8,14 @@ const handleText = async (ctx) => {
   let split_text = text.split(' ')
   //console.log(split_text)
 
-  if(text[0] != '/' || split_text.length < 2) {
+  if(text[0] != '/' || split_text.length < 1) {
     ctx.reply('That was not a valid input')
   } 
+
+  else if (split_text.length == 1) {
+    var outputurl = `The URL for that is www.domainname.com/${user.id}/${split_text[0].slice(1)}`
+    ctx.reply(outputurl)
+  }
  
 
   else{
@@ -22,13 +27,53 @@ const handleText = async (ctx) => {
       let user_id = user.id
       console.log(user.id)
       let time = Date.now()
-      const result = await client.execute({
-        sql: "insert into content(id, user_id, key, value, timestamp) values (:id, :user_id, :key, :value, :timestamp)", 
-        args: { id: id, user_id: user_id, key: key, value: value, timestamp: time}
+      
+      if (key == "get"){
 
-      });
-      console.log(result)
-      ctx.reply('It has been added')
+        try {
+          const result = await client.execute(`SELECT * FROM content WHERE user_id = ${user.id} AND key = ${value}`);
+          let final = "key value timestamp\n"
+          for (const i of result.rows) {
+            let date = new Date(i.timestamp)
+            let day = date.getDate(); 
+            let month = date.getMonth() + 1; // Month (January is 0, so add 1 to get the correct month number)
+            let year = date.getFullYear(); 
+            let formattedDate = `${day}/${month}/${year}`;
+            final += `${i.key} ${i.value} ${formattedDate}\n`
+          }
+
+          console.log(final)
+          ctx.reply(final)
+
+  
+
+        }
+
+        catch(e) {
+          if (e.message.includes('SQL_INPUT_ERROR: SQL input error: no such column:')) {
+            ctx.reply("Invalid query")
+          }
+          else {
+            console.log(e.message)
+            ctx.reply(e)
+        }
+      }
+
+      }
+
+      else {
+
+        const result = await client.execute({
+          sql: "insert into content(id, user_id, key, value, timestamp) values (:id, :user_id, :key, :value, :timestamp)", 
+          args: { id: id, user_id: user_id, key: key, value: value, timestamp: time}
+  
+        });
+        console.log(result)
+        ctx.reply('It has been added')
+  
+
+      }
+
 
 
     }
