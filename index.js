@@ -6,8 +6,58 @@ import handleText from './utils/handleText.js'
 import createUser from './utils/createUser.js'
 import client from './lib/sqlClient.js'
 import fs from 'fs'
+import path from 'path';
+const __dirname = path.resolve();
 import 'dotenv/config'
 
+import Fastify from 'fastify'
+import fastifyStatic from "@fastify/static";
+
+const fastify = Fastify({
+  logger: false
+})
+
+fastify.register(fastifyStatic, {
+  root: path.join(__dirname, "static"),
+  prefix: "/static/", // optional: default '/'
+  //constraints: { host: "example.com" }, // optional: default {}
+});
+
+// Declare a route
+fastify.get('/', async (request, reply) => {
+  console.log(request.url)
+  reply.sendFile('index.html');
+})
+
+fastify.get('/:userId/:key', async (request, reply) => {
+  console.log(request.params)
+
+  try{
+    const result = await client.execute(`select * from content where user_id = ${request.params.userId} and key = ${request.params.key} order by timestamp desc`) 
+
+    return result.rows[0]
+    
+  }
+
+  catch(e){
+    return "invalid input"
+  }
+  
+})
+
+fastify.get('/:userId/:key/all', async (request, reply) => {
+  console.log(request.params)
+  const rest = await client.execute(`select * from content where user_id = ${request.params.userId} and key = ${request.params.key} order by timestamp desc`) 
+  // array of objects with {value: value, timestamp: timestamp}
+})
+
+// Run the server!
+try {
+  await fastify.listen({ port: 8000 })
+} catch (err) {
+  fastify.log.error(err)
+  process.exit(1)
+}
 
 const host = '0.0.0.0';
 const port = 8000; 
@@ -54,10 +104,10 @@ const requestListener = async function (req, res) {
 
 }
 
-const server = http.createServer(requestListener);
-server.listen(port, host, () => {
-    console.log(`Server is running on http://${host}:${port}`);
-});
+// const server = http.createServer(requestListener);
+// server.listen(port, host, () => {
+//     console.log(`Server is running on http://${host}:${port}`);
+// });
 
 
 // try {    

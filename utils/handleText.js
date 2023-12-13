@@ -32,18 +32,18 @@ const handleText = async (ctx) => {
 
         try {
           const result = await client.execute(`SELECT * FROM content WHERE user_id = ${user.id} AND key = ${value}`);
-          let final = "key value timestamp\n"
+          let final = `${value}\n\n`
           for (const i of result.rows) {
             let date = new Date(i.timestamp)
             let day = date.getDate(); 
             let month = date.getMonth() + 1; // Month (January is 0, so add 1 to get the correct month number)
             let year = date.getFullYear(); 
             let formattedDate = `${day}/${month}/${year}`;
-            final += `${i.key} ${i.value} ${formattedDate}\n`
+            final += `<b>${i.value}</b> - ${formattedDate}\n`
           }
 
           console.log(final)
-          ctx.reply(final)
+          ctx.replyWithHTML(final)
 
   
 
